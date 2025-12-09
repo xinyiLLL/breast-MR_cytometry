@@ -15,7 +15,6 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                            f1_score, roc_auc_score, roc_curve, confusion_matrix,
                            classification_report)
 from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
 import warnings
 import os
 
@@ -359,4 +358,5 @@ if __name__ == "__main__":
     feature_type = 'micro'  # 'ADC', 'micro', 'all' 
     classifier = RadiomicsClassifier(f'../qinghai_result/{model_type}_feature.xlsx') 
     final_results, cv_results = classifier.run_complete_pipeline(feature_type)
+
 
