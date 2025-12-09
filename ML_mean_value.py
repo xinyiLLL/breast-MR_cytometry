@@ -39,7 +39,6 @@ class RadiomicsClassifier:
         self.global_best_params = None  
         self.roc_data = {}  
         
-        # 创建保存结果的文件夹
         os.makedirs('results', exist_ok=True)
         os.makedirs('fig', exist_ok=True)
         
@@ -360,3 +359,4 @@ if __name__ == "__main__":
     feature_type = 'micro'  # 'ADC', 'micro', 'all' 
     classifier = RadiomicsClassifier(f'../qinghai_result/{model_type}_feature.xlsx') 
     final_results, cv_results = classifier.run_complete_pipeline(feature_type)
+
