@@ -15,7 +15,6 @@ from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                            f1_score, roc_auc_score, roc_curve, confusion_matrix,
                            classification_report)
 from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
 import warnings
 import os
 
@@ -383,3 +382,4 @@ if __name__ == "__main__":
     model_type='IMPULSED'
     classifier = RadiomicsClassifier(f'../radiomics_feature/{model_type}/{feature_type}_normalize_binwidth0.1_{model_type}.xlsx') 
     final_results, cv_results = classifier.run_complete_pipeline(feature_type)
+
