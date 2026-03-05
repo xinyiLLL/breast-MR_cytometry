@@ -109,10 +109,6 @@ def extract_features(base_path, output_file, is_adc=False):
         
         df['label'] = [0] * 25 + [1] * 96
 
-        # ages = pd.read_excel('../qinghai_result/所有患者信息.xlsx', usecols=['年龄'])
-        # df['age'] = ages.values
-        # cols = ['Patient','age'] + [col for col in df.columns if col not in ['Patient','age']]
-
         cols = ['Patient'] + [col for col in df.columns if col not in ['Patient']]
         df = df[cols]
 
@@ -137,4 +133,5 @@ def main(cls):
 
 
 if __name__ == '__main__':
+
     main('IMPULSED')
