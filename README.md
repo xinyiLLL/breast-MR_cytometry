@@ -3,6 +3,6 @@ To evaluate the diagnostic efficacy of radiomics features extracted from MR cyto
 ### extract_radiomics.py
 Extract radiomics features from nii flies
 ### ML_mean_value.py
-Bulid machine learning models based on mean values of feature mappings.
+Bulid machine learning models based on mean values of feature mappings and evaluate on external test set.
 ### ML_radiomics.py
-Bulid radiomics-based machine learning models.
+Bulid radiomics-based machine learning models and evaluate on external test set.
