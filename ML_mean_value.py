@@ -14,9 +14,7 @@ from sklearn.metrics import (
 )
 from sklearn.base import clone
 import warnings
-import os
-        
-
+from scipy import stats
 from sklearn.svm import SVC
 
 warnings.filterwarnings("ignore")
@@ -42,7 +40,7 @@ class RadiomicsClassifier:
         self.X = self.train_df[self.features]
         self.y = self.train_df["label"].values
 
-        print(f"training set: {self.X.shape}, label: {np.bincount(self.y)}")
+        print(f"Train set: {self.X.shape}, Label distribution: {np.bincount(self.y)}")
 
     def preprocess_train(self):
         self.mm = MinMaxScaler()
@@ -52,28 +50,12 @@ class RadiomicsClassifier:
             self.std = StandardScaler()
             X_std = self.std.fit_transform(X_mm)
 
-            self.pca = PCA(n_components=0.97, random_state=42)
+            self.pca = PCA(n_components=0.999, random_state=42)
             self.X_train_final = self.pca.fit_transform(X_std)
-            print(f"dimension after PCA: {self.X_train_final.shape[1]}")
-
-            n_components = self.pca.n_components_
-            for i in range(n_components):
-                component_weights = self.pca.components_[i]
-                variance_ratio = self.pca.explained_variance_ratio_[i]
-                
-                expression_parts = []
-                for j, weight in enumerate(component_weights):
-                    if abs(weight) > 0.001: 
-                        feature_name = self.features[j] if j < len(self.features) else f'X{j+1}'
-                        expression_parts.append(f"{weight:.2f}*{feature_name}")
-                
-                if expression_parts:
-                    expression = " + ".join(expression_parts)
-                    print(f"PC{i+1} (explained variance ratio: {variance_ratio:.3f}):")
-                    print(f"  {expression}")
+            print(f"Dimensions after PCA: {self.X_train_final.shape[1]}")
         else:
             self.X_train_final = X_mm
-        
+
     def load_external(self):
         if self.external_path is None:
             return None, None
@@ -88,110 +70,31 @@ class RadiomicsClassifier:
             X = self.std.transform(X)
             X = self.pca.transform(X)
 
-        print(f"external test set: {X.shape}, label: {np.bincount(y)}")
+        print(f"External validation set: {X.shape}, Label distribution: {np.bincount(y)}")
         return X, y
 
     def get_models_and_params(self):
         models = {
             "GaussianNB": GaussianNB(),
-            "SVM": SVC(probability=True, random_state=42, class_weight="balanced"),
-            "LR": LogisticRegression(max_iter=1000, random_state=42, class_weight="balanced"),
-            "RandomForest": RandomForestClassifier(random_state=42, class_weight="balanced"),
-            "GradientBoosting": GradientBoostingClassifier(random_state=42),
-            "KNN": KNeighborsClassifier()
+            # "SVM": SVC(probability=True, random_state=42, class_weight="balanced"),
+            # "RandomForest": RandomForestClassifier(random_state=42, class_weight="balanced"),
         }
-        # adc
-        # params = {
-        #     'GaussianNB': {
-        #         'var_smoothing': [1e-8, 1e-4, 0.1, 1, 10, 100]
-        #     },
-        #     'SVM': {
-        #         'C': np.linspace(10,100,10),
-        #         'gamma': ['scale', 'auto', 0.001, 0.01, 0.1, 1],
-        #         'kernel': ['rbf', 'linear']
-        #     },
-        #     'LR': {
-        #         'C': [0.01, 0.1, 1, 10, 100],
-        #         'solver': ['liblinear', 'lbfgs','sparse_cg']
-        #     },
-        #     'RandomForest': {
-        #         'n_estimators': [50, 100, 150, 200],
-        #         'max_depth': [5, 7, 9, 11]
-        #     },
-        #     'GradientBoosting': {
-        #         'n_estimators': [50, 100, 150, 200, 250],
-        #         'learning_rate': [0.01, 0.1, 0.5, 1],
-        #         'max_depth': [3, 4,5,6, 7, 8,9]
-        #     },
-        #     'KNN': {
-        #         'n_neighbors': [1, 3, 5, 7, 9, 11, 13],
-        #         'weights': ['uniform', 'distance'],
-        #         'metric': ['euclidean', 'manhattan','minkowski'],
-        #         'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute']
-        #     }
-        # }
         
-        # micro
-        # params = {
-        #         'GaussianNB': {
-        #         'var_smoothing': np.logspace(-9, -1, 10)
-        #         },
-        #         'SVM': {
-        #             'C':[0.1, 1, 10, 100],
-        #             'gamma': ['scale', 'auto', 0.001, 0.01, 0.1, 1],
-        #             'kernel': ['rbf', 'linear']
-        #         },
-        #         'LR': {
-        #             'C': [0.01, 0.1, 1, 10, 100],
-        #             'solver': ['liblinear', 'lbfgs','sparse_cg']
-        #         },
-        #         'RandomForest': {
-        #             'n_estimators': [100, 150, 200, 250],
-        #             'max_depth': [7,9,11],
-        #         },
-        #         'GradientBoosting': {
-        #             'n_estimators': [50, 100, 150, 200, 250],
-        #             'learning_rate': [0.01, 0.1, 0.5, 1],
-        #             'max_depth': [3, 5, 7, 9]
-        #         },
-        #         'KNN': {
-        #             'n_neighbors': [1, 3, 5, 7, 9, 11],
-        #             'weights': ['uniform', 'distance'],
-        #             'metric': ['euclidean', 'manhattan']
-        #         }
-        #     }
-
-        # all 0.97
         params = {
             'GaussianNB': {
-                'var_smoothing': [1e-6,1e-3,1,100]
+                'var_smoothing': np.logspace(-20, -1, 10)
             },
-            'SVM': {
-                'C': np.arange(1, 10, 2), 
-                'gamma': ['scale', 'auto', 0.001, 0.01, 0.1, 1],
-                'kernel': ['rbf', 'linear','poly']
-            },
-            'LR': {
-                'C': [0.001,0.01,0.5,1,10],
-                'solver': ['liblinear', 'lbfgs','sparse_cg'],
-                'penalty' : ['l1', 'l2']
-            },
-            'RandomForest': {
-                'n_estimators': [200, 250,300,350],
-                'max_depth': [7,9,11,13],
-                'min_samples_leaf':[3, 5, 7],
-                'min_samples_split': [5, 7, 9, 11]
-            },
-            'GradientBoosting': {
-                'n_estimators': [25,50, 75,100],
-                'learning_rate': [0.001,0.05, 0.1, 1],
-                'max_depth': [3,5,7,9,11]
-            },
-            'KNN': {
-                'n_neighbors': [9,11,13],
-                'weights': ['uniform', 'distance'],
-                'metric': ['euclidean', 'manhattan']
-            }
+            # 'SVM': {
+            #     'C': np.linspace(0.5,1,21),
+            #     'gamma': ['scale', 'auto', 0.001, 0.01, 0.1, 1],
+            #     'kernel': ['rbf', 'linear']
+            # },
+            # 'RandomForest': {
+            #     'n_estimators': [50, 100, 150, 200],
+            #     'max_depth': [7,8,9,10,11,12,13],
+            #     'min_samples_split': [3, 5, 7, 9, 11],
+            #     'min_samples_leaf':[3, 5, 7, 9, 11],
+            # },
         }
         return models, params
 
@@ -205,6 +108,27 @@ class RadiomicsClassifier:
 
     def get_prob(self, model, X):
         return model.predict_proba(X)[:, 1]
+
+    def bootstrap_auc(self, y_true, y_prob, n_bootstraps=1000, random_state=42):
+        rng = np.random.RandomState(random_state)
+        bootstrapped_scores = []
+        original_auc = roc_auc_score(y_true, y_prob)
+
+        for _ in range(n_bootstraps):
+            indices = rng.randint(0, len(y_prob), len(y_prob))
+            if len(np.unique(y_true[indices])) < 2:
+                continue
+            
+            score = roc_auc_score(y_true[indices], y_prob[indices])
+            bootstrapped_scores.append(score)
+
+        if not bootstrapped_scores:
+            return original_auc, original_auc, original_auc
+
+        lower_bound = np.percentile(bootstrapped_scores, 2.5)
+        upper_bound = np.percentile(bootstrapped_scores, 97.5)
+
+        return original_auc, lower_bound, upper_bound
 
     def cross_validation(self, X_ext=None, y_ext=None):
         skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
@@ -231,7 +155,7 @@ class RadiomicsClassifier:
                 gs.fit(X_tr, y_tr)
 
                 best_params = gs.best_params_
-                print(f"{name} best params: {best_params}")
+                print(f"{name} Best params: {best_params}")
 
                 model = clone(base_model).set_params(**best_params)
                 model.fit(X_tr, y_tr)
@@ -242,6 +166,8 @@ class RadiomicsClassifier:
                 y_va_pred = (y_va_prob >= thr).astype(int)
 
                 cv_results[name].append({
+                    "y_true": y_va.copy(),
+                    "y_prob": y_va_prob.copy(),
                     "auc": roc_auc_score(y_va, y_va_prob),
                     "accuracy": accuracy_score(y_va, y_va_pred),
                     "recall": recall_score(y_va, y_va_pred),
@@ -254,26 +180,103 @@ class RadiomicsClassifier:
                     y_ext_pred = (y_ext_prob >= thr).astype(int)
                     
                     ext_results[name].append({
+                        "y_true": y_ext.copy(),
+                        "y_prob": y_ext_prob.copy(),
                         "auc": roc_auc_score(y_ext, y_ext_prob),
                         "accuracy": accuracy_score(y_ext, y_ext_pred),
                         "recall": recall_score(y_ext, y_ext_pred),
                         "specificity": self.specificity(y_ext, y_ext_pred),
                         "f1": f1_score(y_ext, y_ext_pred),
-                        "probabilities": y_ext_prob,  
-                        "predictions": y_ext_pred,    
-                        "threshold": thr,             
-                        "fold": fold                  
+                        "probabilities": y_ext_prob,
+                        "predictions": y_ext_pred,
+                        "threshold": thr,
+                        "fold": fold
                     })
 
         return cv_results, ext_results
 
-    def summarize(self, results, title):
+    def format_metrics_table(self, results, dataset_name):
+        table_rows = []
+        
+        for model_name, model_results in results.items():
+            if len(model_results) == 0:
+                continue
+
+            fold_aucs = [r.get("auc", 0) for r in model_results]
+            auc_mean = np.mean(fold_aucs)
+            
+            if "train_cv" in dataset_name:
+                y_true_all = np.concatenate([r["y_true"] for r in model_results])
+                y_prob_all = np.concatenate([r["y_prob"] for r in model_results])
+            else:
+                y_true_all = model_results[0]["y_true"]
+                y_prob_all = np.mean([r["y_prob"] for r in model_results], axis=0)
+            
+            _, auc_lower, auc_upper = self.bootstrap_auc(y_true_all, y_prob_all)
+            
+            accuracies = [r["accuracy"] for r in model_results]
+            recalls = [r["recall"] for r in model_results]
+            specificities = [r["specificity"] for r in model_results]
+            f1s = [r["f1"] for r in model_results]
+            
+            acc_mean = np.mean(accuracies)
+            sen_mean = np.mean(recalls)
+            spe_mean = np.mean(specificities)
+            f1_mean = np.mean(f1s)
+            
+            print(f"{model_name}:")
+            print(f"  AUC: {auc_mean:.3f} (CI: {auc_lower:.3f}-{auc_upper:.3f})")
+            print(f"  Accuracy: {acc_mean:.3f} ± {np.std(accuracies):.3f}")
+            print(f"  Sensitivity: {sen_mean:.3f} ± {np.std(recalls):.3f}")
+            print(f"  Specificity: {spe_mean:.3f} ± {np.std(specificities):.3f}")
+            print(f"  F1: {f1_mean:.3f} ± {np.std(f1s):.3f}")
+            
+            row = {
+                "Model": model_name,
+                "AUC (95% CI)": f"{auc_mean:.3f} ({auc_lower:.3f}-{auc_upper:.3f})",
+                "accuracy": f"{acc_mean:.3f}",
+                "sensitivity": f"{sen_mean:.3f}",
+                "specificity": f"{spe_mean:.3f}",
+                "F1": f"{f1_mean:.3f}"
+            }
+            table_rows.append(row)
+        
+        df = pd.DataFrame(table_rows)
+        if df.empty:
+            return None
+
+        column_order = ["Model", "AUC (95% CI)", "accuracy", "sensitivity", "specificity", "F1"]
+        df = df[column_order]
+        
+        os.makedirs("results", exist_ok=True)
+        filename = f"results/{dataset_name}_{self.feature_type}_metrics.xlsx"
+        df.to_excel(filename, index=False, engine='openpyxl')
+        print(f"\nSaved to: {filename}")
+        
+        return df
+
+    def print_formatted_table(self, df, title):
+        print("\n" + "=" * 80)
+        print(f"{title}")
+        print("=" * 80)
+        
+        header = f"{'Model':<15} | {'AUC (95% CI)':<20} | {'accuracy':<10} | {'sensitivity':<12} | {'specificity':<12} | {'F1':<8}"
+        print(header)
+        print("-" * 80)
+        
+        for _, row in df.iterrows():
+            line = f"{row['Model']:<15} | {row['AUC (95% CI)']:<20} | {row['accuracy']:<10} | {row['sensitivity']:<12} | {row['specificity']:<12} | {row['F1']:<8}"
+            print(line)
+
+    def summarize(self, results, title, dataset_name):
         print("\n" + "=" * 60)
         print(title)
-        for m, res in results.items():
-            aucs = [r["auc"] for r in res]
-            print(f"{m:10s} | AUC = {np.mean(aucs):.3f} ± {np.std(aucs):.3f}")
-
+        
+        df = self.format_metrics_table(results, dataset_name)
+        if df is not None:
+            self.print_formatted_table(df, title)
+        return df
+    
     def run(self):
         self.load_data()
         self.preprocess_train()
@@ -281,25 +284,16 @@ class RadiomicsClassifier:
 
         cv_res, ext_res = self.cross_validation(X_ext, y_ext)
 
-        self.summarize(cv_res, "5-fold internal validation")
+        cv_df = self.summarize(cv_res, "Internal 5-Fold CV Results", "train_cv")
+        
         if X_ext is not None:
-            self.summarize(ext_res, "External test set")
-            
-            for model_name, results in ext_res.items():
-                print(f"\n{model_name}:")
-                for fold_result in results:
-                    fold_num = fold_result.get('fold', 0)
-                    print(f"  fold{fold_num}: AUC={fold_result['auc']:.3f}, "
-                          f"ACC={fold_result['accuracy']:.3f}, "
-                          f"SEN={fold_result['recall']:.3f}, "
-                          f"SPE={fold_result['specificity']:.3f}, "
-                          f"F1={fold_result['f1']:.3f}, ")
-
+            ext_df = self.summarize(ext_res, "External Test Set Results", "external_test")
+           
 
 if __name__ == "__main__":
-    feature_type = "all"   # adc / micro / all
-    train_path = "../mean_feature/QH.xlsx"
-    external_path = "../mean_feature/external.xlsx"
+    feature_type = "adc"
+    train_path = "../mean_feature/train.xlsx"
+    external_path = f"../mean_feature/mean.xlsx"
     clf = RadiomicsClassifier(
         train_path=train_path,
         external_path=external_path,
