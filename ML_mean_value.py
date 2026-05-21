@@ -76,26 +76,106 @@ class RadiomicsClassifier:
     def get_models_and_params(self):
         models = {
             "GaussianNB": GaussianNB(),
-            # "SVM": SVC(probability=True, random_state=42, class_weight="balanced"),
-            # "RandomForest": RandomForestClassifier(random_state=42, class_weight="balanced"),
+            "SVM": SVC(probability=True, random_state=42, class_weight="balanced"),
+            "LR": LogisticRegression(max_iter=1000, random_state=42, class_weight="balanced"),
+            "RandomForest": RandomForestClassifier(random_state=42, class_weight="balanced"),
+            "GradientBoosting": GradientBoostingClassifier(random_state=42),
+            "KNN": KNeighborsClassifier()
         }
-        
+        # adc 
         params = {
             'GaussianNB': {
-                'var_smoothing': np.logspace(-20, -1, 10)
+                'var_smoothing': [1e-8, 1e-4, 0.1, 1, 10, 100]
             },
-            # 'SVM': {
-            #     'C': np.linspace(0.5,1,21),
-            #     'gamma': ['scale', 'auto', 0.001, 0.01, 0.1, 1],
-            #     'kernel': ['rbf', 'linear']
-            # },
-            # 'RandomForest': {
-            #     'n_estimators': [50, 100, 150, 200],
-            #     'max_depth': [7,8,9,10,11,12,13],
-            #     'min_samples_split': [3, 5, 7, 9, 11],
-            #     'min_samples_leaf':[3, 5, 7, 9, 11],
-            # },
+            'SVM': {
+                'C': np.linspace(10,100,10),
+                'gamma': ['scale', 'auto', 0.001, 0.01, 0.1, 1],
+                'kernel': ['rbf', 'linear']
+            },
+            'LR': {
+                'C': [0.01, 0.1, 1, 10, 100],
+                'solver': ['liblinear', 'lbfgs','sparse_cg']
+            },
+            'RandomForest': {
+                'n_estimators': [50, 100, 150, 200],
+                'max_depth': [5, 7, 9, 11],
+            },
+            'GradientBoosting': {
+                'n_estimators': [50, 100, 150, 200, 250],
+                'learning_rate': [0.01, 0.1, 0.5, 1],
+                'max_depth': [3, 4,5,6, 7, 8,9]
+            },
+            'KNN': {
+                'n_neighbors': [1, 3, 5, 7, 9, 11, 13],
+                'weights': ['uniform', 'distance'],
+                'metric': ['euclidean', 'manhattan','minkowski'],
+                'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute']
+            }
         }
+
+        # micro
+        # params = {
+        #         'GaussianNB': {
+        #         'var_smoothing': np.logspace(-9, -1, 10)
+        #         },
+        #         'SVM': {
+        #             'C':[0.1, 1, 10, 100],
+        #             'gamma': ['scale', 'auto', 0.001, 0.01, 0.1, 1],
+        #             'kernel': ['rbf', 'linear']
+        #         },
+        #         'LR': {
+        #             'C': [0.01, 0.1, 1, 10, 100],
+        #             'solver': ['liblinear', 'lbfgs','sparse_cg']
+        #         },
+        #         'RandomForest': {
+        #             'n_estimators': [100, 150, 200, 250],
+        #             'max_depth': [7,9,11],
+        #         },
+        #         'GradientBoosting': {
+        #             'n_estimators': [50, 100, 150, 200, 250],
+        #             'learning_rate': [0.01, 0.1, 0.5, 1],
+        #             'max_depth': [3, 5, 7, 9]
+        #         },
+        #         'KNN': {
+        #             'n_neighbors': [1, 3, 5, 7, 9, 11],
+        #             # 'n_neighbors': [1, 3, 5, 7, 9, 11, 13],
+        #             'weights': ['uniform', 'distance'],
+        #             'metric': ['euclidean', 'manhattan']
+        #         }
+        #     }
+
+        # all 
+        # params = {
+        #     'GaussianNB': {
+        #         'var_smoothing': [1e-6,1e-3,1,100]
+        #     },
+        #     'SVM': {
+        #         'C': np.arange(1, 10, 2), 
+        #         'gamma': ['scale', 'auto', 0.001, 0.01, 0.1, 1],
+        #         'kernel': ['rbf', 'linear','poly']
+        #     },
+        #     'LR': {
+        #         'C': [0.001,0.01,0.5,1,10],
+        #         'solver': ['liblinear', 'lbfgs','sparse_cg'],
+        #         'penalty' : ['l1', 'l2']
+        #     },
+        #     'RandomForest': {
+        #         'n_estimators': [200, 250,300,350],
+        #         'max_depth': [7,9,11,13],
+        #         'min_samples_leaf':[3, 5, 7],
+        #         'min_samples_split': [5, 7, 9, 11]
+        #     },
+        #     'GradientBoosting': {
+        #         'n_estimators': [25,50, 75,100],
+        #         'learning_rate': [0.001,0.05, 0.1, 1],
+        #         'max_depth': [3,5,7,9,11]
+        #     },
+        #     'KNN': {
+        #         'n_neighbors': [9,11,13],
+        #         'weights': ['uniform', 'distance'],
+        #         'metric': ['euclidean', 'manhattan']
+        #     }
+        # }
         return models, params
 
     def specificity(self, y_true, y_pred):
